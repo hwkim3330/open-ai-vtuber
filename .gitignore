@@ -1,6 +1,20 @@
 # ignore the user configuration file
 conf.yaml
 
+# ignore log files
+*.log
+auto_start.log
+streaming.log
+youtube_chat.log
+auto_browser.log
+full_auto.log
+server.log
+server_new.log
+
+# ignore quick reference files with keys
+README_QUICK.txt
+STATUS.md
+
 # ignore non-default background images
 /backgrounds/*
 !/backgrounds/README.md
