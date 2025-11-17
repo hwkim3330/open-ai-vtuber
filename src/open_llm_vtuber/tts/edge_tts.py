@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 
 import edge_tts
 from loguru import logger
@@ -24,6 +25,20 @@ class TTSEngine(TTSInterface):
         if not os.path.exists(self.new_audio_dir):
             os.makedirs(self.new_audio_dir)
 
+    def convert_markdown_to_ssml(self, text):
+        """
+        Convert **text** markdown to SSML prosody tags for higher pitch.
+        **text** → <prosody pitch="+30%">text</prosody>
+        """
+        # Convert **text** to higher pitch SSML
+        text = re.sub(r'\*\*(.+?)\*\*', r'<prosody pitch="+30%">\1</prosody>', text)
+
+        # Wrap in speak tag if SSML tags are present
+        if '<prosody' in text:
+            text = f'<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">{text}</speak>'
+
+        return text
+
     def generate_audio(self, text, file_name_no_ext=None):
         """
         Generate speech audio file using TTS.
@@ -39,8 +54,11 @@ class TTSEngine(TTSInterface):
         """
         file_name = self.generate_cache_file_name(file_name_no_ext, self.file_extension)
 
+        # Convert **text** to SSML for pitch control
+        text_with_ssml = self.convert_markdown_to_ssml(text)
+
         try:
-            communicate = edge_tts.Communicate(text, self.voice)
+            communicate = edge_tts.Communicate(text_with_ssml, self.voice)
             communicate.save_sync(file_name)
         except Exception as e:
             logger.critical(f"\nError: edge-tts unable to generate audio: {e}")

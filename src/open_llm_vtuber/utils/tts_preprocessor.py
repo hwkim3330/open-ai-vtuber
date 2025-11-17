@@ -11,6 +11,7 @@ def tts_filter(
     ignore_parentheses: bool,
     ignore_asterisks: bool,
     ignore_angle_brackets: bool,
+    ignore_code_blocks: bool,
     translator: TranslateInterface | None = None,
 ) -> str:
     """
@@ -24,12 +25,21 @@ def tts_filter(
         ignore_brackets (bool): Whether to ignore text within brackets.
         ignore_parentheses (bool): Whether to ignore text within parentheses.
         ignore_asterisks (bool): Whether to ignore text within asterisks.
+        ignore_code_blocks (bool): Whether to ignore markdown code blocks (```...```).
         translator (TranslateInterface, optional):
             The translator to use. If None, we'll skip the translation. Defaults to None.
 
     Returns:
         str: The filtered text.
     """
+    if ignore_code_blocks:
+        try:
+            text = filter_code_blocks(text)
+        except Exception as e:
+            logger.warning(f"Error ignoring code blocks: {e}")
+            logger.warning(f"Text: {text}")
+            logger.warning("Skipping...")
+
     if ignore_asterisks:
         try:
             text = filter_asterisks(text)
@@ -191,6 +201,30 @@ def filter_asterisks(text: str) -> str:
     filtered_text = re.sub(r"\*{1,}((?!\*).)*?\*{1,}", "", text)
 
     # Clean up any extra spaces
+    filtered_text = re.sub(r"\s+", " ", filtered_text).strip()
+
+    return filtered_text
+
+
+def filter_code_blocks(text: str) -> str:
+    """
+    Removes markdown code blocks (```...```) from the text.
+    This prevents SVG code, code snippets, and other technical content
+    from being read aloud by TTS.
+
+    Args:
+        text: The input string.
+
+    Returns:
+        The string with code blocks removed.
+    """
+    # Remove code blocks with language specifier (e.g., ```svg...```)
+    filtered_text = re.sub(r"```\w*\n.*?\n```", "", text, flags=re.DOTALL)
+
+    # Remove code blocks without language specifier (e.g., ```...```)
+    filtered_text = re.sub(r"```.*?```", "", filtered_text, flags=re.DOTALL)
+
+    # Clean up any extra spaces and newlines
     filtered_text = re.sub(r"\s+", " ", filtered_text).strip()
 
     return filtered_text

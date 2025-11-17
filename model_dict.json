@@ -10,21 +10,37 @@
         "idleMotionGroupName": "Idle",
         "emotionMap": {
             "neutral": 0,
+            "fear": 1,
+            "sadness": 1,
             "anger": 2,
             "disgust": 2,
-            "fear": 1,
             "joy": 3,
             "smirk": 3,
-            "sadness": 1,
-            "surprise": 3
+            "surprise": 3,
+            "happy": 4,
+            "excited": 4,
+            "love": 5,
+            "cute": 5,
+            "sleepy": 6,
+            "tired": 6,
+            "confident": 7,
+            "proud": 7
         },
         "tapMotions": {
             "HitAreaHead": {
-                "": 1
+                "": 6
             },
             "HitAreaBody": {
-                "": 1
+                "": 6
             }
+        },
+        "motionMap": {
+            "wave": "mtn_02",
+            "nod": "mtn_03",
+            "shake": "mtn_04",
+            "dance": "special_01",
+            "spin": "special_02",
+            "jump": "special_03"
         }
     }
 ]

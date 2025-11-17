@@ -3,7 +3,7 @@
 # YouTube 스트리밍 - ffmpeg 직접 스트리밍 (24시간 자동)
 # GUI 없이 백그라운드에서 실행 가능
 
-STREAM_KEY="YOUR_YOUTUBE_STREAM_KEY"  # YouTube 스트림 키를 여기에 입력하세요
+STREAM_KEY="qawy-zmxr-1w9t-zw8w-9j6r"  # YouTube 스트림 키
 YOUTUBE_URL="rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY"
 VTUBER_URL="http://localhost:12393"
 
