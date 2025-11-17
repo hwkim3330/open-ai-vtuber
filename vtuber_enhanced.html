@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>미나 - AI VTuber 라이브</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Nanum Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #vtuber-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* 채팅 오버레이 */
+        #chat-overlay {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 400px;
+            max-height: 600px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: none;
+        }
+
+        #chat-messages {
+            max-height: 500px;
+            overflow-y: auto;
+            color: white;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .chat-message {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* AI 생성 이미지 갤러리 */
+        #image-gallery {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 300px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 15px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #gallery-title {
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        #current-image {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #image-caption {
+            color: #ccc;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        /* 활동 피드 */
+        #activity-feed {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 350px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 15px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        #activity-title {
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .activity-item {
+            color: white;
+            font-size: 13px;
+            margin-bottom: 8px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .activity-time {
+            color: #aaa;
+            font-size: 11px;
+            margin-top: 3px;
+        }
+
+        /* 상태 표시 */
+        #status-indicator {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 101;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4ade80;
+            display: inline-block;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <!-- VTuber 메인 화면 -->
+    <iframe id="vtuber-frame" src="http://localhost:12393"></iframe>
+
+    <!-- 상태 표시 -->
+    <div id="status-indicator">
+        <span class="status-dot"></span>
+        <span>🎤 라이브 중 • 🤖 AI 활동 중</span>
+    </div>
+
+    <!-- AI 생성 이미지 갤러리 -->
+    <div id="image-gallery">
+        <div id="gallery-title">🎨 AI가 그린 그림</div>
+        <img id="current-image" src="" alt="AI 생성 이미지" style="display: none;">
+        <div id="image-caption">이미지 로딩 중...</div>
+    </div>
+
+    <!-- 활동 피드 -->
+    <div id="activity-feed">
+        <div id="activity-title">📡 최근 활동</div>
+        <div id="activity-list"></div>
+    </div>
+
+    <script>
+        // WebSocket 연결 (활동 로깅용)
+        let ws;
+        try {
+            ws = new WebSocket('ws://localhost:12393/ws');
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                addActivity(data.text || data.message || '새로운 활동');
+            };
+        } catch (e) {
+            console.log('WebSocket 연결 실패:', e);
+        }
+
+        // 활동 추가
+        function addActivity(text) {
+            const activityList = document.getElementById('activity-list');
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            const time = new Date().toLocaleTimeString('ko-KR');
+            item.innerHTML = `
+                ${text}
+                <div class="activity-time">${time}</div>
+            `;
+            activityList.insertBefore(item, activityList.firstChild);
+
+            // 최대 10개만 유지
+            while (activityList.children.length > 10) {
+                activityList.removeChild(activityList.lastChild);
+            }
+        }
+
+        // 이미지 갤러리 업데이트
+        async function updateGallery() {
+            try {
+                const response = await fetch('/generated_images/latest.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    const img = document.getElementById('current-image');
+                    const caption = document.getElementById('image-caption');
+
+                    img.src = data.path;
+                    img.style.display = 'block';
+                    caption.textContent = data.prompt;
+                    addActivity(`🎨 새로운 그림: ${data.prompt}`);
+                }
+            } catch (e) {
+                console.log('이미지 갤러리 업데이트 실패:', e);
+            }
+        }
+
+        // 주기적으로 이미지 확인
+        setInterval(updateGallery, 10000); // 10초마다
+
+        // 초기 활동 로그
+        addActivity('🎬 VTuber 시스템 시작');
+        addActivity('🤖 AI 자동 브라우징 활성화');
+        addActivity('🎨 AI 이미지 생성기 대기 중');
+
+        // 주기적으로 더미 활동 추가 (테스트용)
+        const dummyActivities = [
+            '🌐 "최신 기술 뉴스" 검색 중...',
+            '📰 GitHub 트렌딩 확인',
+            '🎵 음악 추천 탐색 중',
+            '🍜 맛집 정보 수집',
+            '🎮 게임 업데이트 확인'
+        ];
+
+        setInterval(() => {
+            const activity = dummyActivities[Math.floor(Math.random() * dummyActivities.length)];
+            addActivity(activity);
+        }, 30000); // 30초마다
+    </script>
+</body>
+</html>

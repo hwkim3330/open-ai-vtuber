@@ -66,8 +66,8 @@ async def browse_sites():
         # VTuber에게 알림
         await send_to_vtuber(starter)
 
-        # 3~5분마다 반복
-        wait_time = random.randint(180, 300)
+        # 30초~1분마다 반복 (더 자주)
+        wait_time = random.randint(30, 60)
         print(f"⏳ {wait_time}초 후 다음 활동...")
         print()
         await asyncio.sleep(wait_time)
