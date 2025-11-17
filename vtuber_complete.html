@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>미나 - AI VTuber 완전 통합 시스템</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Nanum Gothic', sans-serif;
+            background: #000;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* VTuber 메인 프레임 */
+        #vtuber-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* SVG 오버레이 - 모델 위에 빛나게 */
+        #svg-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            height: 500px;
+            z-index: 50;
+            pointer-events: none;
+            filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.8))
+                    drop-shadow(0 0 60px rgba(100, 200, 255, 0.6));
+            animation: float 6s ease-in-out infinite;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        #svg-overlay.visible {
+            opacity: 1;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(-50%, -50%) translateY(0px) rotate(0deg); }
+            25% { transform: translate(-50%, -50%) translateY(-20px) rotate(2deg); }
+            50% { transform: translate(-50%, -50%) translateY(0px) rotate(-2deg); }
+            75% { transform: translate(-50%, -50%) translateY(-10px) rotate(1deg); }
+        }
+
+        /* 활동 피드 */
+        #activity-feed {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 400px;
+            max-height: 500px;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 20px;
+            padding: 20px;
+            z-index: 100;
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+        }
+
+        #activity-title {
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .activity-item {
+            color: white;
+            font-size: 14px;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: linear-gradient(135deg, rgba(100, 50, 255, 0.3), rgba(50, 100, 255, 0.3));
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            animation: slideIn 0.5s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .activity-time {
+            color: #aaa;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+
+        .activity-icon {
+            font-size: 18px;
+            margin-right: 8px;
+        }
+
+        /* 상태 표시 */
+        #status-bar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 16px;
+            z-index: 101;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 10px #4ade80;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+
+        /* 스크롤바 스타일 */
+        #activity-feed::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #activity-feed::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        #activity-feed::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        #activity-feed::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* 미디어 갤러리 */
+        #media-preview {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 300px;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 20px;
+            padding: 15px;
+            z-index: 100;
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        #media-title {
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        #current-media {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #media-caption {
+            color: #ccc;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <!-- VTuber 메인 화면 -->
+    <iframe id="vtuber-frame" src="http://localhost:12393"></iframe>
+
+    <!-- SVG 오버레이 (모델 위에 빛나게) -->
+    <div id="svg-overlay"></div>
+
+    <!-- 상태 표시 -->
+    <div id="status-bar">
+        <span class="status-dot"></span>
+        <span>🎤 라이브 중 • 🎨 AI 창작 중 • 🤖 자동 활동 중</span>
+    </div>
+
+    <!-- 미디어 프리뷰 -->
+    <div id="media-preview">
+        <div id="media-title">🎨 AI 최신 작품</div>
+        <div id="current-media"></div>
+        <div id="media-caption">작품 생성 대기 중...</div>
+    </div>
+
+    <!-- 활동 피드 -->
+    <div id="activity-feed">
+        <div id="activity-title">📡 실시간 활동</div>
+        <div id="activity-list"></div>
+    </div>
+
+    <script>
+        // WebSocket 연결
+        let ws;
+        try {
+            ws = new WebSocket('ws://localhost:12393/ws');
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.text || data.message) {
+                        addActivity('💬', data.text || data.message);
+                    }
+                } catch (e) {
+                    console.log('WebSocket message:', event.data);
+                }
+            };
+            ws.onopen = () => {
+                addActivity('✅', 'VTuber 서버 연결 완료');
+            };
+        } catch (e) {
+            console.log('WebSocket 연결 실패:', e);
+        }
+
+        // 활동 추가
+        function addActivity(icon, text) {
+            const activityList = document.getElementById('activity-list');
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            const time = new Date().toLocaleTimeString('ko-KR');
+            item.innerHTML = `
+                <span class="activity-icon">${icon}</span>${text}
+                <div class="activity-time">${time}</div>
+            `;
+            activityList.insertBefore(item, activityList.firstChild);
+
+            // 최대 15개만 유지
+            while (activityList.children.length > 15) {
+                activityList.removeChild(activityList.lastChild);
+            }
+        }
+
+        // SVG 파일 확인 및 표시
+        async function checkForNewSVG() {
+            try {
+                const response = await fetch('/generated_images/latest_svg.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    const svgResponse = await fetch(data.path);
+                    const svgContent = await svgResponse.text();
+
+                    // SVG 오버레이에 표시
+                    const overlay = document.getElementById('svg-overlay');
+                    overlay.innerHTML = svgContent;
+                    overlay.classList.add('visible');
+
+                    // 미디어 프리뷰에도 표시
+                    const mediaDiv = document.getElementById('current-media');
+                    mediaDiv.innerHTML = svgContent;
+                    document.getElementById('media-caption').textContent = data.topic || '새로운 작품';
+
+                    addActivity('🎨', `새로운 그림: ${data.topic || 'AI 작품'}`);
+
+                    // 10초 후 페이드아웃
+                    setTimeout(() => {
+                        overlay.classList.remove('visible');
+                    }, 10000);
+                }
+            } catch (e) {
+                console.log('SVG 확인 실패:', e);
+            }
+        }
+
+        // 주기적으로 SVG 확인
+        setInterval(checkForNewSVG, 5000);
+
+        // 초기 활동
+        addActivity('🎬', 'VTuber 완전 통합 시스템 시작');
+        addActivity('🗣️', '여성 음성 (SunHiNeural) 활성화');
+        addActivity('⚡', '10초마다 자동 발화 모드');
+        addActivity('🌐', '30~60초 주기 자동 브라우징');
+        addActivity('🎨', 'AI SVG 생성기 대기 중');
+        addActivity('🎵', 'AI MIDI 작곡 시스템 대기 중');
+
+        // 시뮬레이션 활동 (테스트용)
+        const activities = [
+            ['🔍', '최신 기술 뉴스 검색 중...'],
+            ['📚', 'GitHub 트렌딩 확인'],
+            ['🎮', '게임 업데이트 정보 수집'],
+            ['🎬', '영화 추천 탐색'],
+            ['🍕', '맛집 리뷰 확인'],
+            ['🎨', 'SVG 아트 생성 중...'],
+            ['🎵', 'MIDI 음악 작곡 중...'],
+            ['💡', '흥미로운 주제 발견!']
+        ];
+
+        let activityIndex = 0;
+        setInterval(() => {
+            const [icon, text] = activities[activityIndex];
+            addActivity(icon, text);
+            activityIndex = (activityIndex + 1) % activities.length;
+        }, 15000); // 15초마다
+    </script>
+</body>
+</html>
