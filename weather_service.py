@@ -51,34 +51,34 @@ def get_weather():
         return None
 
 def get_weather_description(code):
-    """WMO 날씨 코드를 한국어로 변환"""
+    """WMO weather code to English description"""
     weather_codes = {
-        0: "맑음",
-        1: "대체로 맑음",
-        2: "구름 조금",
-        3: "흐림",
-        45: "안개",
-        48: "안개",
-        51: "이슬비",
-        53: "이슬비",
-        55: "이슬비",
-        61: "비",
-        63: "비",
-        65: "강한 비",
-        71: "눈",
-        73: "눈",
-        75: "강한 눈",
-        77: "진눈깨비",
-        80: "소나기",
-        81: "소나기",
-        82: "강한 소나기",
-        85: "눈",
-        86: "강한 눈",
-        95: "천둥번개",
-        96: "천둥번개와 우박",
-        99: "천둥번개와 우박"
+        0: "Clear sky",
+        1: "Mainly clear",
+        2: "Partly cloudy",
+        3: "Overcast",
+        45: "Fog",
+        48: "Fog",
+        51: "Light drizzle",
+        53: "Drizzle",
+        55: "Heavy drizzle",
+        61: "Rain",
+        63: "Rain",
+        65: "Heavy rain",
+        71: "Snow",
+        73: "Snow",
+        75: "Heavy snow",
+        77: "Snow grains",
+        80: "Rain showers",
+        81: "Rain showers",
+        82: "Heavy showers",
+        85: "Snow showers",
+        86: "Heavy snow showers",
+        95: "Thunderstorm",
+        96: "Thunderstorm with hail",
+        99: "Thunderstorm with hail"
     }
-    return weather_codes.get(code, "알 수 없음")
+    return weather_codes.get(code, "Unknown")
 
 async def broadcast_weather():
     """주기적으로 날씨 방송"""
@@ -98,28 +98,28 @@ async def broadcast_weather():
             print(f"   💨 풍속: {weather['wind_speed']}")
             print(f"   ☁️  날씨: {weather['condition']}")
 
-            # VTuber에게 전달
+            # Send to VTuber
             try:
                 async with websockets.connect(VTUBER_WS_URL) as websocket:
-                    message = f"📍 {weather['location']} 날씨: {weather['condition']}, {weather['temperature']}, 습도 {weather['humidity']}"
+                    message = f"📍 Weather update for {weather['location']}: {weather['condition']}, {weather['temperature']}, humidity {weather['humidity']}"
                     data = {
                         "type": "proactive_speak",
                         "text": message
                     }
                     await websocket.send(json.dumps(data))
-                    print(f"   ✅ VTuber에게 전달: {message}")
+                    print(f"   ✅ Sent to VTuber: {message}")
             except Exception as e:
-                print(f"   ❌ VTuber 연결 실패: {e}")
+                print(f"   ❌ VTuber connection failed: {e}")
 
-        # 30분마다 날씨 방송
-        print(f"⏳ 30분 후 다음 날씨 방송...")
+        # Broadcast every 30 minutes
+        print(f"⏳ Next weather broadcast in 30 minutes...")
         print()
         await asyncio.sleep(1800)
 
 async def main():
-    """메인 함수"""
+    """Main function"""
     print("=" * 60)
-    print("   판교 날씨 기상캐스터")
+    print("   Pangyo Weather Forecaster")
     print("=" * 60)
     print()
 

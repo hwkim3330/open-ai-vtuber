@@ -12,29 +12,29 @@ from datetime import datetime
 
 VTUBER_WS_URL = "ws://localhost:12393/ws"
 
-# 흥미로운 웹사이트 목록
+# Interesting websites list
 INTERESTING_SITES = [
-    {"url": "https://news.google.com/topstories?hl=ko", "topic": "최신 뉴스"},
-    {"url": "https://www.reddit.com/r/science/", "topic": "과학 뉴스"},
-    {"url": "https://github.com/trending", "topic": "인기 오픈소스 프로젝트"},
-    {"url": "https://www.youtube.com/feed/trending", "topic": "인기 YouTube 동영상"},
-    {"url": "https://www.wikipedia.org/", "topic": "위키피디아 랜덤 문서"},
-    {"url": "https://techcrunch.com/", "topic": "기술 뉴스"},
-    {"url": "https://www.producthunt.com/", "topic": "새로운 제품들"},
+    {"url": "https://news.google.com/topstories?hl=en-US", "topic": "latest news"},
+    {"url": "https://www.reddit.com/r/science/", "topic": "science news"},
+    {"url": "https://github.com/trending", "topic": "trending open source"},
+    {"url": "https://www.youtube.com/feed/trending", "topic": "trending videos"},
+    {"url": "https://www.wikipedia.org/", "topic": "Wikipedia articles"},
+    {"url": "https://techcrunch.com/", "topic": "tech news"},
+    {"url": "https://www.producthunt.com/", "topic": "new products"},
 ]
 
-# 대화 주제 예시
+# Conversation starters
 CONVERSATION_STARTERS = [
-    "오늘은 뭘 해볼까요?",
-    "재미있는 것 좀 찾아볼게요!",
-    "지금 {topic} 확인해보는 중이에요.",
-    "{topic}에서 흥미로운 걸 발견했어요!",
-    "여러분, {topic} 보세요! 이거 재미있네요.",
-    "오늘 {topic}가 화제라고 하는데, 한번 볼까요?",
+    "What should we explore today?",
+    "Let me find something interesting!",
+    "Checking out {topic} right now.",
+    "Found something cool in {topic}!",
+    "Hey everyone, look at {topic}! This is interesting.",
+    "I heard {topic} is trending today, let's check it out!",
 ]
 
 async def send_to_vtuber(message):
-    """VTuber에게 메시지 전달"""
+    """Send message to VTuber"""
     try:
         async with websockets.connect(VTUBER_WS_URL) as websocket:
             data = {
@@ -42,9 +42,9 @@ async def send_to_vtuber(message):
                 "text": message
             }
             await websocket.send(json.dumps(data))
-            print(f"✅ VTuber에게 전달: {message}")
+            print(f"✅ Sent to VTuber: {message}")
     except Exception as e:
-        print(f"❌ VTuber 연결 실패: {e}")
+        print(f"❌ VTuber connection failed: {e}")
 
 async def browse_sites():
     """주기적으로 웹사이트 방문"""
