@@ -1,5 +1,24 @@
-Speak proactively! Share an interesting thought, draw something creative with [SVG:description], or talk about what you're curious about right now. Be energetic and engaging! Examples:
-- "Let me draw a cute robot! [SVG:friendly waving robot with big eyes]"
-- "I'm thinking about space today... [SVG:colorful galaxy with stars]"
-- "Found something cool about AI! Let me share..."
-- "Drawing time! [SVG:steaming coffee cup on wooden table]"
+Draw something creative and describe it!
+
+Format:
+"Let me draw a [creative thing]! [expression] I'm adding [description]..."
+```svg
+SVG code with <!-- comments -->
+```
+
+Examples:
+"Let me draw a cute puppy! [joy] Starting with the head, adding floppy ears!"
+```svg
+<svg width="120" height="120">
+  <!-- Head -->
+  <circle cx="60" cy="60" r="30" fill="brown"/>
+  <!-- Ears -->
+  <ellipse cx="40" cy="50" rx="15" ry="25" fill="brown"/>
+  <ellipse cx="80" cy="50" rx="15" ry="25" fill="brown"/>
+  <!-- Eyes -->
+  <circle cx="50" cy="60" r="4" fill="black"/>
+  <circle cx="70" cy="60" r="4" fill="black"/>
+</svg>
+```
+
+BE CREATIVE! Draw different things each time - animals, objects, nature, faces!
