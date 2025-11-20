@@ -40,6 +40,7 @@ class BasicMemoryAgent(AgentInterface):
         llm: StatelessLLMInterface,
         system: str,
         live2d_model,
+        fallback_llm: Optional[StatelessLLMInterface] = None,
         tts_preprocessor_config: TTSPreprocessorConfig = None,
         faster_first_response: bool = True,
         segment_method: str = "pysbd",
@@ -62,6 +63,7 @@ class BasicMemoryAgent(AgentInterface):
         self._tool_prompts = tool_prompts or {}
         self._interrupt_handled = False
         self.prompt_mode_flag = False
+        self._fallback_llm = fallback_llm
 
         self._tool_manager = tool_manager
         self._tool_executor = tool_executor
@@ -643,21 +645,53 @@ class BasicMemoryAgent(AgentInterface):
                 return
             else:
                 logger.info("Starting simple chat completion.")
-                token_stream = self._llm.chat_completion(messages, self._system)
                 complete_response = ""
-                async for event in token_stream:
-                    text_chunk = ""
-                    if isinstance(event, dict) and event.get("type") == "text_delta":
-                        text_chunk = event.get("text", "")
-                    elif isinstance(event, str):
-                        text_chunk = event
+                try:
+                    token_stream = self._llm.chat_completion(messages, self._system)
+                    async for event in token_stream:
+                        text_chunk = ""
+                        if isinstance(event, dict) and event.get("type") == "text_delta":
+                            text_chunk = event.get("text", "")
+                        elif isinstance(event, str):
+                            text_chunk = event
+                        else:
+                            continue
+                        if text_chunk:
+                            yield text_chunk
+                            complete_response += text_chunk
+                    if complete_response:
+                        self._add_message(complete_response, "assistant")
+                except Exception as e:
+                    logger.error(f"❌ Primary LLM failed: {e}")
+                    if self._fallback_llm:
+                        logger.warning(f"🔄 Switching to fallback LLM...")
+                        try:
+                            fallback_stream = self._fallback_llm.chat_completion(messages, self._system)
+                            fallback_response = ""
+                            async for event in fallback_stream:
+                                text_chunk = ""
+                                if isinstance(event, dict) and event.get("type") == "text_delta":
+                                    text_chunk = event.get("text", "")
+                                elif isinstance(event, str):
+                                    text_chunk = event
+                                else:
+                                    continue
+                                if text_chunk:
+                                    yield text_chunk
+                                    fallback_response += text_chunk
+                            if fallback_response:
+                                self._add_message(fallback_response, "assistant")
+                            logger.info(f"✅ Fallback LLM succeeded")
+                        except Exception as fallback_error:
+                            logger.error(f"❌ Fallback LLM also failed: {fallback_error}")
+                            error_message = "[Error: Both primary and fallback LLM failed. Please try again later.]"
+                            yield error_message
+                            self._add_message(error_message, "assistant")
                     else:
-                        continue
-                    if text_chunk:
-                        yield text_chunk
-                        complete_response += text_chunk
-                if complete_response:
-                    self._add_message(complete_response, "assistant")
+                        logger.error(f"❌ No fallback LLM configured")
+                        error_message = f"[Error from LLM: {str(e)}. Please try again later.]"
+                        yield error_message
+                        self._add_message(error_message, "assistant")
 
         return chat_with_memory
 

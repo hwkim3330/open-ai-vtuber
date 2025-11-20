@@ -60,6 +60,28 @@ class AgentFactory:
                 llm_provider=llm_provider, system_prompt=system_prompt, **llm_config
             )
 
+            # Create fallback LLM if specified
+            fallback_llm = None
+            fallback_llm_provider: str = basic_memory_settings.get("fallback_llm_provider")
+            if fallback_llm_provider:
+                logger.info(f"Setting up fallback LLM: {fallback_llm_provider}")
+                fallback_llm_config = llm_configs.get(fallback_llm_provider)
+                if fallback_llm_config:
+                    try:
+                        # Remove interrupt_method to avoid pop conflicts
+                        fallback_config_copy = fallback_llm_config.copy()
+                        fallback_config_copy.pop("interrupt_method", None)
+                        fallback_llm = StatelessLLMFactory.create_llm(
+                            llm_provider=fallback_llm_provider,
+                            system_prompt=system_prompt,
+                            **fallback_config_copy
+                        )
+                        logger.info(f"✅ Fallback LLM ({fallback_llm_provider}) ready")
+                    except Exception as e:
+                        logger.warning(f"Failed to create fallback LLM: {e}")
+                else:
+                    logger.warning(f"No config found for fallback LLM: {fallback_llm_provider}")
+
             tool_prompts = kwargs.get("system_config", {}).get("tool_prompts", {})
 
             # Extract MCP components/data needed by BasicMemoryAgent from kwargs
@@ -70,6 +92,7 @@ class AgentFactory:
             # Create the agent with the LLM and live2d_model
             return BasicMemoryAgent(
                 llm=llm,
+                fallback_llm=fallback_llm,
                 system=system_prompt,
                 live2d_model=live2d_model,
                 tts_preprocessor_config=tts_preprocessor_config,
